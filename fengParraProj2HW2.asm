@@ -67,102 +67,98 @@ length2Char:
 		jr $ra
 
 strcmp: 
-	#Define your code here
-	############################################
+	la $s1, ($ra)
+	addi $s7, $a0, 0
+	addi $s6, $a1, 0
+	jal findMinMax
+	bltu $a2, 0, exit
+	jal whichString
+	addi $a1, $s6, 0
+	addi $a0, $s7, 0
+	jal checkMatch
+	la $v0, ($t4)
+	la $ra, ($s1)
+	jr $ra
 	
-	move $s2, $a2
-	la $t9, ($ra)					# Saves main.asm
-	move $v1, $0
-	jal strcmpSetLength
-	jal strcmpOption
-	jal checkStringMatch
-	move $v0, $s3
-	la $ra, ($t9)					# Loads main.asm
-	############################################
-	jr $ra							# Return to main.asm
-	
-	strcmpOption:
-		beq $s2, 0, checkStrings0
-		bltu $s2, 0, exit
-		bgtu $s2, $s7, exit
-		bgtu $s2, 0, checkStrings1
-	
-	checkStrings0:
-		beq $t5, $s5, exit	# Exit on max string size
-		addi $t5, $t5, 1
-		lbu $t7, 0($a0)
-		beq $t7, 0, exit
-		lbu $t6, 0($a1)
-		beq $t6, 0, exit
-		addi $a0, $a0, 1
-		addi $a1, $a1, 1
-		beq $t7, $t6, charMatch0
-		j checkStrings0
-		
-		charMatch0:
-				addi $s3, $s3, 1			# Character count
-				j checkStrings0 	
-						
-	checkStrings1:
-		bgtu $a2, $s5, exit
-		beq $t5, $s2, exit
-		addi $t5, $t5, 1
-		lbu $t7, 0($a0)
-		lbu $t6, 0($a1)
-		addi $a0, $a0, 1
-		addi $a1, $a1, 1
-		beq $t7, $t6, charMatch1
-		j checkStrings1	
-		
-			charMatch1:
-				addi $s3, $s3, 1			# Character count
-				j checkStrings1 	
-	
-	strcmpSetLength:
-		la $t8, ($ra)						# Saves strcmp
-		jal str1Length
-		sub $a0, $a0, $s7
-		jal str2Length
-		sub $a1, $a1, $s6
-		bltu $s7, $s6, maxMin
-		move $s5, $s7						# Max
-		move $s4, $s6						# Min
-		la $ra, ($t8)						# Loads strcmp
-		jr $ra								# Return to strcmp
-			
-			str1Length:
-				lbu $t7, 0($a0)
-				beq $t7, 0, exit
-				addi $a0, $a0, 1
-				addi $s7, $s7, 1			# Str1Length
-				j str1Length
-			
-			str2Length:
-				lbu $t7, 0($a1)
-				beq $t7, 0, exit
-				addi $a1, $a1, 1
-				addi $s6, $s6, 1			# Str2Length
-				j str2Length
-				
-			maxMin:
-				move $s5, $s6				# Max
-				move $s4, $s7				# Min
-				la $ra, ($t8)
-				jr $ra
-				
-	
-	checkStringMatch:
-		beq $s3, $s2, stringMatch
-		bltu $s3, $s6, exit
-		bgtu $a2, $s5, exit
-		bltu $s3, $s2, exit		
-		beq $s3, $s7, stringMatch
+	checkMatch:
+		beq	$t4, $t9, match
+		beq $t4, $t8, match
+		li $v1, 0
 		jr $ra
 		
-	stringMatch:
-		li $v1, 1
-		jr $ra
+		match:
+			li $v1, 1
+			jr $ra
 	
+	whichString:
+		beq $t7, 0, a0MaxCheck
+		beq $t7, 1, a1MaxCheck
+		
+		a0MaxCheck:
+			bgtu $a2, $t9, exit
+			addi $t3, $t3, 1		# Loop Count	
+			beq $t3, $a2, exit
+			lbu $t6, 0($a0)
+			lbu $t5, 0($a1)
+			addi $a0, $a0, 1
+			addi $a1, $a1, 1
+			beq $t6, $t5, charMatcha0
+			beq $t3, $a2, exit
+			beq $t3, $t9, exit
+			addi $a1, $s6, 0
+			j a0MaxCheck
+			
+			charMatcha0:
+				addi $t4, $t4, 1
+				j a0MaxCheck
+				
+		a1MaxCheck:
+			bgtu $a2, $t8, exit
+			addi $t3, $t3, 1		# Loop Count	
+			beq $t3, $a2, exit
+			lbu $t5, 0($a1)
+			lbu $t6, 0($a0)
+			addi $a1, $a1, 1
+			addi $a0, $a0, 1
+			beq $t6, $t5, charMatcha1
+			beq $t3, $a2, exit
+			beq $t3, $t8, exit
+			addi $a0, $s7, 0
+			j a1MaxCheck
+			
+			charMatcha1:
+				addi $t4, $t4, 1
+				j a1MaxCheck	
+	
+	findMinMax:
+		la $s2, ($ra)
+		jal a0Length
+		jal a1Length
+		addi $a0, $s7, 0
+		addi $a1, $s6, 0
+		bgtu $t8, $t9, a1IsMax
+		la $ra, ($s2)
+		jr $ra
+		
+		a0Length:
+			lbu $t1, 0($a0)
+			addi $a0, $a0, 1
+			beq $t1, 0, exit
+			addi $t9, $t9, 1			# t9 = a0 length
+			j a0Length
+		
+		a1Length:
+			lbu $t1, 0($a1)
+			addi $a1, $a1, 1
+			beq $t1, 0, exit
+			addi $t8, $t8, 1			# t8 = a1 length
+			j a1Length	
+			
+		a1IsMax:
+			addi $t7, $t7, 1
+			la $ra, ($s2)
+			jr $ra 
+
 	exit:	
 		jr $ra
 	
@@ -182,7 +178,8 @@ createKey:
 	jr $ra
 
 keyIndex:
-	#Define your code here
+	#la $a1, FMorseCipherArray
+	#li $a2, 3
 	jr $ra
 
 FMCEncrypt:

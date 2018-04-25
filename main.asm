@@ -10,7 +10,7 @@ str_return: .asciiz "Return: "
 
 # toUpper
 toUpper_header: .asciiz "\n\n********* toUpper *********\n"
-toUpper_CSisFun: .asciiz "symbols & spaces!"
+toUpper_CSisFun: .asciiz ""
 
 # length2Char
 length2Char_header: .asciiz "\n\n********* length2Char *********\n"
@@ -19,8 +19,8 @@ length2Char_CSisFun: .asciiz "Looking for characters."
 
 # strcmp
 strcmp_header: .asciiz "\n\n********* strcmp *********\n"
-strcmp_str1: .asciiz "Hi Cse220!"
-strcmp_str2: .asciiz "Hi Cse220!"
+strcmp_str1: .asciiz "dog"
+strcmp_str2: .asciiz "newdog"
 
 # toMorse
 toMorse_header: .asciiz "\n\n********* toMorse *********\n"
@@ -116,40 +116,7 @@ fromMorse_size: .word 30
 
 main:
 
-	############################################
-	# TEST CASE for toUpper	
-	############################################
-	print_string(toUpper_header)
-	print_string(str_input)
-	print_string(toUpper_CSisFun) 
-	print_newline
-
-	la $a0, toUpper_CSisFun
 	
-	jal toUpper
-
-	move $t0, $v0
-	print_string(str_result)	
-	print_string_reg($t0) 
-	print_newline
-
-	############################################
-	# TEST CASE for length2Char
-	############################################
-	print_string(length2Char_header)
-	print_string(str_input)
-	print_string(length2Char_CSisFun)
-	print_newline
-
-	la $a0, length2Char_CSisFun
-	la $a1, length2Char_char 
-	jal length2Char
-
-
-	move $t0, $v0
-	print_string(str_return)
-	print_int($t0)
-	print_newline
 
 	############################################
 	# TEST CASE for strcmp
@@ -168,7 +135,7 @@ main:
 
 	la $a0, strcmp_str1
 	la $a1, strcmp_str2
-	li $a2, 6 # was 4
+	li $a2, 0 # was 4
 	jal strcmp
 
 	move $t0, $v0
