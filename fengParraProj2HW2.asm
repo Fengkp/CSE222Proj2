@@ -18,12 +18,7 @@ toUpper:
 	jal iterate
 	addi $a0, $s2, 0
 	addi $v0, $a0, 0
-	
-	# Clear and finish
-	li $s2, 0
-	li $t9, 0
 	la $ra, ($s1)
-	li $s1, 0
 	jr $ra
 	
 	iterate:
@@ -40,49 +35,56 @@ toUpper:
 		j iterate
 
 length2Char:
-	#Define your code here
-	############################################
-	move $t2, $a1
-	lbu $t1, 0($a0)
-	lbu $t3, 0($t2)
-	addi $a0, $a0, 1				# Increment string
-	addi $t5, $t5, 1				# Char count
-	beq $t1, $t3, foundChar			# If char is equal to input char then exit
-	beq $t1, 0, foundChar
-	j length2Char
-	############################################
-	li $t1, 0
-	li $t2, 0
+	li $v0, 0
+	la $s1, ($ra)
+	lbu $t8, 0($a1)
+	addi $s2, $a0, 0
+	jal findChar
+	addi $a0, $s2, 0
+	move $v0, $t3
+	la $ra, ($s1)
+	li $t9, 0
+	li $t8, 0
 	li $t3, 0
-	li $t5, 0
 	jr $ra
 	
-	foundChar:
-		subi $t5, $t5, 1				# Char count
-		move $v0, $t5
-		li $t1, 0
-		li $t2, 0
-		li $t3, 0
-		li $t5, 0
-		jr $ra
-
+	findChar:	
+		lbu $t9, 0($a0)
+		beq $t9, 0x00, exit
+		beq $t9, $t8, exit
+		addi $t3, $t3, 1
+		addi $a0, $a0, 1
+		j findChar
+	
 strcmp: 
+	li $v0, 0
 	la $s1, ($ra)
+	blt $a2, 0, exit
 	addi $s7, $a0, 0
 	addi $s6, $a1, 0
 	jal findMinMax
-	bltu $a2, 0, exit
+	la $ra, ($s1)
+	bgtu $a2, $t9, exit
+	bgtu $a2, $t8, exit
+	jal setCount
 	jal whichString
 	addi $a1, $s6, 0
 	addi $a0, $s7, 0
 	jal checkMatch
-	la $v0, ($t4)
+	move $v0, $t4
 	la $ra, ($s1)
 	jr $ra
 	
+	setCount:
+		bgt $a2, 0, countIsInput
+		jr $ra
+		
+		countIsInput:
+			move $s3, $a2
+			jr $ra
+			
 	checkMatch:
-		beq	$t4, $t9, match
-		beq $t4, $t8, match
+		beq $t4, $s3, match
 		li $v1, 0
 		jr $ra
 		
@@ -95,17 +97,15 @@ strcmp:
 		beq $t7, 1, a1MaxCheck
 		
 		a0MaxCheck:
-			bgtu $a2, $t9, exit
 			addi $t3, $t3, 1		# Loop Count	
-			beq $t3, $a2, exit
+			bgtu $t3, $s3, exit
 			lbu $t6, 0($a0)
 			lbu $t5, 0($a1)
 			addi $a0, $a0, 1
 			addi $a1, $a1, 1
 			beq $t6, $t5, charMatcha0
-			beq $t3, $a2, exit
 			beq $t3, $t9, exit
-			addi $a1, $s6, 0
+			addi $a1, $s6, 0		# Resetting to check a1 sequence at new character in a0
 			j a0MaxCheck
 			
 			charMatcha0:
@@ -113,17 +113,15 @@ strcmp:
 				j a0MaxCheck
 				
 		a1MaxCheck:
-			bgtu $a2, $t8, exit
 			addi $t3, $t3, 1		# Loop Count	
-			beq $t3, $a2, exit
+			bgtu $t3, $s3, exit
 			lbu $t5, 0($a1)
 			lbu $t6, 0($a0)
 			addi $a1, $a1, 1
 			addi $a0, $a0, 1
 			beq $t6, $t5, charMatcha1
-			beq $t3, $a2, exit
 			beq $t3, $t8, exit
-			addi $a0, $s7, 0
+			addi $a0, $s7, 0		# Resetting to check a0 sequence at new character in a1
 			j a1MaxCheck
 			
 			charMatcha1:
@@ -137,6 +135,7 @@ strcmp:
 		addi $a0, $s7, 0
 		addi $a1, $s6, 0
 		bgtu $t8, $t9, a1IsMax
+		move $s3, $t9
 		la $ra, ($s2)
 		jr $ra
 		
@@ -156,14 +155,12 @@ strcmp:
 			
 		a1IsMax:
 			addi $t7, $t7, 1
+			move $s3, $t8
 			la $ra, ($s2)
 			jr $ra 
 
 	exit:	
 		jr $ra
-	
-	
-
 
 ##############################
 # PART 2 FUNCTIONS
@@ -174,13 +171,79 @@ toMorse:
 	jr $ra
 
 createKey:
-	#Define your code here
+	li $v0, -1
+	la $t3, 0
+	la $s1, ($ra)
+	addi $s7, $a0, 0
+	la $a1, Alphabet
+	addi $s6, $a1, 0
+	jal splitUpper:
+	
+
 	jr $ra
+	
+	deleteDup:
+		lbu $t9, 0($a0)
+		addi $a0, $a0, 1
+		j 
+		
+	
+	splitUpper:
+		beq $a0, 0, exit
+		lbu $t9, 0($a0)
+		bltu $t9, 'A', deleteChar
+		bgtu $t9, 'Z', deleteChar
+		addi $a0, $a0, 1
+		j splitUpper
+		
+		deleteChar:
+			addi $a0, $a0, 1
+			sb $t9, 0($a0)
+			subi $a0, $a0, 1
+			j splitUpper
 
 keyIndex:
-	#la $a1, FMorseCipherArray
-	#li $a2, 3
+	li $v0, -1
+	la $t3, 0
+	la $s1, ($ra)
+	addi $s7, $a0, 0
+	la $a1, FMorseCipherArray
+	jal checkKey
+	jal getKey
+	addi $a0, $s7, 0
+	la $ra, ($s1)
 	jr $ra
+	
+	checkKey:
+		addi $t3, $t3, 1
+		bgtu $t3, 78, exit
+		lbu $t9, 0($a0)
+		lbu $t8, 0($a1)
+		addi $a0, $a0, 1
+		addi $a1, $a1, 1
+		beq $t9, $t8, matchKey
+		li $t4, 0
+		addi $a0, $s7, 0
+		j checkKey
+		
+		matchKey:
+			addi $t4, $t4, 1
+			beq $t4, 3, verifyMatch
+			j checkKey
+			
+			verifyMatch:
+				li $t5, 3
+				div $t3, $t5
+				mfhi $t6
+				beq $t6, 0, exit
+				j checkKey		
+			
+	getKey:
+		bltu $t4, 3, exit
+		mflo $v0
+		subi $v0, $v0, 1
+		jr $ra
+		
 
 FMCEncrypt:
 	#Define your code here
@@ -215,6 +278,7 @@ finalStr: .word 0
 
 MorseCode: .word MorseExclamation, MorseDblQoute, MorseHashtag, Morse$, MorsePercent, MorseAmp, MorseSglQoute, MorseOParen, MorseCParen, MorseStar, MorsePlus, MorseComma, MorseDash, MorsePeriod, MorseFSlash, Morse0, Morse1,  Morse2, Morse3, Morse4, Morse5, Morse6, Morse7, Morse8, Morse9, MorseColon, MorseSemiColon, MorseLT, MorseEQ, MorseGT, MorseQuestion, MorseAt, MorseA, MorseB, MorseC, MorseD, MorseE, MorseF, MorseG, MorseH, MorseI, MorseJ, MorseK, MorseL, MorseM, MorseN, MorseO, MorseP, MorseQ, MorseR, MorseS, MorseT, MorseU, MorseV, MorseW, MorseX, MorseY, MorseZ 
 
+Alphabet: .asciiz "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 MorseExclamation: .asciiz "-.-.--"
 MorseDblQoute: .asciiz ".-..-."
 MorseHashtag: .ascii ""
